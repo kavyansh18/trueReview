@@ -24,7 +24,7 @@
     verifyCode: string,
     verifyCodeExpiry: Date,
     isVerified: boolean,
-    isAcceptingMessage: boolean,
+    isAcceptingMessages: boolean,
     messages: Message[] 
  }
 
@@ -57,7 +57,7 @@
         type: Boolean,
         default: false 
     },
-    isAcceptingMessage   : {
+    isAcceptingMessages   : {
         type: Boolean,
         default: true 
     },
