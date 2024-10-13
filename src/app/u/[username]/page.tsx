@@ -18,12 +18,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { toast } from '@/hooks/use-toast';
+import { toast } from '@/components/ui/use-toast';
 import * as z from 'zod';
-import { apiResponse } from '@/types/apiResponse';
+import { ApiResponse } from '@/types/ApiResponse';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { messagesSchema } from '@/schemas/messageSchema';
+import { messageSchema } from '@/schemas/messageSchema';
 
 const specialChar = '||';
 
@@ -48,8 +48,8 @@ export default function SendMessage() {
     initialCompletion: initialMessageString,
   });
 
-  const form = useForm<z.infer<typeof messagesSchema>>({
-    resolver: zodResolver(messagesSchema),
+  const form = useForm<z.infer<typeof messageSchema>>({
+    resolver: zodResolver(messageSchema),
   });
 
   const messageContent = form.watch('content');
@@ -60,10 +60,10 @@ export default function SendMessage() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = async (data: z.infer<typeof messagesSchema>) => {
+  const onSubmit = async (data: z.infer<typeof messageSchema>) => {
     setIsLoading(true);
     try {
-      const response = await axios.post<apiResponse>('/api/send-message', {
+      const response = await axios.post<ApiResponse>('/api/send-message', {
         ...data,
         username,
       });
@@ -74,7 +74,7 @@ export default function SendMessage() {
       });
       form.reset({ ...form.getValues(), content: '' });
     } catch (error) {
-      const axiosError = error as AxiosError<apiResponse>;
+      const axiosError = error as AxiosError<ApiResponse>;
       toast({
         title: 'Error',
         description:

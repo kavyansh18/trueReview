@@ -1,11 +1,11 @@
 'use client';
 
-import { apiResponse } from '@/types/apiResponse';
+import { ApiResponse } from '@/types/ApiResponse';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import {  useDebounceCallback } from 'usehooks-ts';
+import { useDebounce } from 'usehooks-ts';
 import * as z from 'zod';
 
 import { Button } from '@/components/ui/button';
@@ -17,18 +17,18 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 import axios, { AxiosError } from 'axios';
 import { Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { signUpSchema } from '@/schemas/signUpSchema';
-import { useToast } from '@/hooks/use-toast';
 
 export default function SignUpForm() {
   const [username, setUsername] = useState('');
   const [usernameMessage, setUsernameMessage] = useState('');
   const [isCheckingUsername, setIsCheckingUsername] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const debounced = useDebounceCallback(setUsername, 300);
+  const debouncedUsername = useDebounce(username, 300);
 
   const router = useRouter();
   const { toast } = useToast();
@@ -36,7 +36,7 @@ export default function SignUpForm() {
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      usernameValidation: '',
+      username: '',
       email: '',
       password: '',
     },
@@ -44,17 +44,16 @@ export default function SignUpForm() {
 
   useEffect(() => {
     const checkUsernameUnique = async () => {
-      if (username) {
+      if (debouncedUsername) {
         setIsCheckingUsername(true);
-        setUsernameMessage('');
+        setUsernameMessage(''); // Reset message
         try {
-          const response = await axios.get<apiResponse>(
-            `/api/check-username-unique?username=${username}`
+          const response = await axios.get<ApiResponse>(
+            `/api/check-username-unique?username=${debouncedUsername}`
           );
-          let message = response.data.message
-          setUsernameMessage(message);
+          setUsernameMessage(response.data.message);
         } catch (error) {
-          const axiosError = error as AxiosError<apiResponse>;
+          const axiosError = error as AxiosError<ApiResponse>;
           setUsernameMessage(
             axiosError.response?.data.message ?? 'Error checking username'
           );
@@ -64,12 +63,12 @@ export default function SignUpForm() {
       }
     };
     checkUsernameUnique();
-  }, [username]);
+  }, [debouncedUsername]);
 
   const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
     setIsSubmitting(true);
     try {
-      const response = await axios.post<apiResponse>('/api/sign-up', data);
+      const response = await axios.post<ApiResponse>('/api/sign-up', data);
 
       toast({
         title: 'Success',
@@ -82,7 +81,7 @@ export default function SignUpForm() {
     } catch (error) {
       console.error('Error during sign-up:', error);
 
-      const axiosError = error as AxiosError<apiResponse>;
+      const axiosError = error as AxiosError<ApiResponse>;
 
       // Default error message
       let errorMessage = axiosError.response?.data.message;
@@ -110,7 +109,7 @@ export default function SignUpForm() {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
-              name="usernameValidation"
+              name="username"
               control={form.control}
               render={({ field }) => (
                 <FormItem>
@@ -119,7 +118,7 @@ export default function SignUpForm() {
                     {...field}
                     onChange={(e) => {
                       field.onChange(e);
-                      debounced(e.target.value);
+                      setUsername(e.target.value);
                     }}
                   />
                   {isCheckingUsername && <Loader2 className="animate-spin" />}
@@ -186,3 +185,4 @@ export default function SignUpForm() {
     </div>
   );
 }
+

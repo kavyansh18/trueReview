@@ -15,11 +15,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { signInSchema } from '@/schemas/signInSchema';
 
 export default function SignInForm() {
   const router = useRouter();
+  const { toast } = useToast();
 
   const form = useForm<z.infer<typeof signInSchema>>({
     resolver: zodResolver(signInSchema),
@@ -29,31 +30,26 @@ export default function SignInForm() {
     },
   });
 
-  const { toast } = useToast();
   const onSubmit = async (data: z.infer<typeof signInSchema>) => {
+    console.log(data);
+
     const result = await signIn('credentials', {
       redirect: false,
       identifier: data.identifier,
       password: data.password,
     });
 
+    console.log(result);
+
     if (result?.error) {
-      if (result.error === 'CredentialsSignin') {
-        toast({
-          title: 'Login Failed',
-          description: 'Incorrect username or password',
-          variant: 'destructive',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error,
-          variant: 'destructive',
-        });
-      }
+      toast({
+        title: 'Login Failed',
+        description: result.error === 'CredentialsSignin' ? 'Incorrect username or password' : result.error,
+        variant: 'destructive',
+      });
     }
 
-    if (result?.url) {
+    if (result?.ok && result.url) {
       router.replace('/dashboard');
     }
   };
@@ -69,6 +65,7 @@ export default function SignInForm() {
         </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Form field for identifier (email/username) */}
             <FormField
               name="identifier"
               control={form.control}
@@ -80,6 +77,7 @@ export default function SignInForm() {
                 </FormItem>
               )}
             />
+            {/* Form field for password */}
             <FormField
               name="password"
               control={form.control}
@@ -91,7 +89,7 @@ export default function SignInForm() {
                 </FormItem>
               )}
             />
-            <Button className='w-full' type="submit">Sign In</Button>
+            <Button className="w-full" type="submit">Sign In</Button>
           </form>
         </Form>
         <div className="text-center mt-4">
